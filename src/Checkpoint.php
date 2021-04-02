@@ -8,6 +8,8 @@ use InvalidArgumentException;
 
 class Checkpoint
 {
+    public static bool $registersRoutes = true;
+
     public static function endpointUrl(): string
     {
         return 'https://faceid.tencentcloudapi.com';
@@ -27,5 +29,12 @@ class Checkpoint
         return Http::asJson()
             ->withMiddleware(SignRequest::handle(config('checkpoint.key'), config('checkpoint.secret'), $options['action']))
             ->{$method}($uri, $payload);
+    }
+
+    public static function ignoreRoutes(): static
+    {
+        static::$registersRoutes = false;
+
+        return new static;
     }
 }
