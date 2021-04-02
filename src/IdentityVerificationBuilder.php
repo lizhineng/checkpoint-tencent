@@ -3,7 +3,7 @@
 namespace Zhineng\Checkpoint\Tencent;
 
 use Illuminate\Database\Eloquent\Model;
-use Zhineng\Checkpoint\Tencent\Channels\IdentityVerificationViaWeb;
+use Zhineng\Checkpoint\Tencent\Channels\IdentityVerificationViaWeChat;
 
 class IdentityVerificationBuilder
 {
@@ -13,8 +13,8 @@ class IdentityVerificationBuilder
         //
     }
 
-    public function viaWeb(int $ruleId): IdentityVerificationViaWeb
+    public function viaWeChat(int $ruleId): IdentityVerificationViaWeChat
     {
-        return new IdentityVerificationViaWeb($this->identifiable, $ruleId);
+        return new IdentityVerificationViaWeChat($this->identifiable, $ruleId);
     }
 }
