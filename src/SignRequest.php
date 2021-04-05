@@ -43,7 +43,7 @@ class SignRequest
 
     protected function buildAuthorization(RequestInterface $request): string
     {
-        $credentialScope = implode('/', [
+        $scope = implode('/', [
             gmdate('Y-m-d', $request->getHeaderLine('X-TC-Timestamp')),
             Str::of($request->getUri()->getHost())->explode('.')->first(),
             'tc3_request',
@@ -51,15 +51,15 @@ class SignRequest
 
         $signedHeaders = collect($this->signedHeaders)->sort()->join(';');
 
-        return "{$this->algorithm} Credential={$this->accessKey}/{$credentialScope}, SignedHeaders={$signedHeaders}, Signature={$this->buildSignature($request, $credentialScope)}";
+        return "{$this->algorithm} Credential={$this->accessKey}/{$scope}, SignedHeaders={$signedHeaders}, Signature={$this->buildSignature($request, $scope)}";
     }
 
-    protected function buildSignature(RequestInterface $request, string $credentialScope): string
+    protected function buildSignature(RequestInterface $request, string $scope): string
     {
         $data = implode("\n", [
             $this->algorithm,
             $request->getHeaderLine('X-TC-Timestamp'),
-            $credentialScope,
+            $scope,
             hash('sha256', $this->buildRequestMeta($request)),
         ]);
 
@@ -73,8 +73,6 @@ class SignRequest
 
     protected function buildRequestMeta(RequestInterface $request): string
     {
-        $request->getBody()->rewind();
-
         return implode("\n", [
             $request->getMethod(),
 
