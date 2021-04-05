@@ -8,7 +8,11 @@ use InvalidArgumentException;
 
 class Checkpoint
 {
+    public static bool $runsMigrations = true;
+
     public static bool $registersRoutes = true;
+
+    public static string $identityVerificationModel = IdentityVerification::class;
 
     public static function endpointUrl(): string
     {

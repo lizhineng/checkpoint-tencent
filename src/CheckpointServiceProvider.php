@@ -17,6 +17,7 @@ class CheckpointServiceProvider extends ServiceProvider
     public function boot()
     {
         $this->bootRoutes();
+        $this->bootMigrations();
     }
 
     protected function bootRoutes(): void
@@ -31,5 +32,12 @@ class CheckpointServiceProvider extends ServiceProvider
         ], function () {
             $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
         });
+    }
+
+    protected function bootMigrations(): void
+    {
+        if (Checkpoint::$runsMigrations && $this->app->runningInConsole()) {
+            $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
+        }
     }
 }
