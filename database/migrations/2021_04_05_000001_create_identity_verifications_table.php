@@ -19,6 +19,11 @@ class CreateIdentityVerificationsTable extends Migration
             $table->string('name');
             $table->string('id_number');
             $table->string('status');
+            $table->json('ocr')->nullable();
+            $table->json('evaluations')->nullable();
+            $table->json('id_card_images')->nullable();
+            $table->json('frames')->nullable();
+            $table->string('video_path')->nullable();
             $table->timestamps();
 
             $table->index(['identifiable_id', 'identifiable_type']);

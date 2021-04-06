@@ -8,4 +8,6 @@ return [
 
     'path' => env('CHECKPOINT_PATH', 'checkpoint'),
 
+    'disk' => env('CHECKPOINT_DISK', config('filesystems.default')),
+
 ];
