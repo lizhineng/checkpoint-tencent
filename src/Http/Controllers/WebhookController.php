@@ -57,7 +57,7 @@ class WebhookController
     {
         $passthrough = json_decode($payload['Extra'], true);
 
-        if (! is_array($passthrough)) {
+        if (! is_array($passthrough) || ! isset($passthrough['rule_id'])) {
             throw new InvalidPassthroughPayload;
         }
 
