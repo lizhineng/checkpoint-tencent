@@ -12,7 +12,7 @@ class Gender
     public const FEMALE = 2;
     public const NOT_APPLICABLE = 9;
 
-    public static function make(string|null $value): int
+    public static function make(string|null $value): int|null
     {
         $lookup = [
             '男' => static::MALE,

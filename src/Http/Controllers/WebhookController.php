@@ -7,6 +7,7 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Zhineng\Checkpoint\Tencent\Channel;
 use Zhineng\Checkpoint\Tencent\Checkpoint;
 use Zhineng\Checkpoint\Tencent\Exceptions\InvalidPassthroughPayload;
 use Zhineng\Checkpoint\Tencent\File;
@@ -19,16 +20,40 @@ class WebhookController
     {
         $payload = $request->all();
 
-        if (! isset($payload['BizToken'])) {
+        if (! $this->hasToken($payload)) {
             return new Response();
         }
 
-        $this->handleIdentityVerifiedViaWeChat($payload);
+        $method = $this->resolveHandler($payload);
+
+        if ($method && method_exists($this, $method)) {
+            try {
+                $this->{$method}($payload);
+            } catch (InvalidPassthroughPayload $e) {
+                return new Response('Webhook Skipped');
+            }
+
+            return new Response('Webhook Handled');
+        }
 
         return new Response();
     }
 
-    protected function handleIdentityVerifiedViaWeChat(array $payload)
+    protected function hasToken(array $payload): bool
+    {
+        return count(array_intersect_key(array_flip(['BizToken']), $payload)) > 0;
+    }
+
+    protected function resolveHandler(array $payload): string|false
+    {
+        if (isset($payload['BizToken'])) {
+            return 'handleIdentityVerifiedViaWeChatWeb';
+        }
+
+        return false;
+    }
+
+    protected function handleIdentityVerifiedViaWeChatWeb(array $payload): void
     {
         $passthrough = json_decode($payload['Extra'], true);
 
@@ -38,12 +63,27 @@ class WebhookController
 
         $verification = $this->newIdentityVerification($payload['Extra']);
 
-        $result = $this->findVerificationResultViaWeChat($payload['BizToken'], $passthrough['rule_id']);
+        $result = $this->findVerificationResultViaWeChatWeb($payload['BizToken'], $passthrough['rule_id']);
+
+        // skip the webhook if there's any errors occurred.
+        if ($result->json('Response.Error')) {
+            return;
+        }
+
+        // skip the webhook if `ErrCode` is null which indicating the status
+        // of the request still awaiting verification.
+        if ($result->json('Response.Text.ErrCode') === null) {
+            return;
+        }
 
         $verification->fill([
             'name' => $result->json('Response.Text.Name'),
             'id_number' => $result->json('Response.Text.IdCard'),
-            'status' => IdentityVerification::STATUS_PASSED,
+            'status' => $result->json('Response.Text.ErrCode') === 0
+                ? IdentityVerification::STATUS_PASSED
+                : IdentityVerification::STATUS_FAILED,
+            'token' => $payload['BizToken'],
+            'channel' => Channel::WECHAT_WEB,
             'ocr' => $this->buildOcrData($result->json('Response.Text')),
             'evaluations' => $this->buildEvaluationsData($result->json('Response.Text.LivenessDetail')),
             'id_card_images' => $this->buildIdCardImagesData($result->json('Response.IdCardData')),
@@ -66,7 +106,7 @@ class WebhookController
         ]);
     }
 
-    protected function findVerificationResultViaWeChat(string $token, string $ruleId): \Illuminate\Http\Client\Response
+    protected function findVerificationResultViaWeChatWeb(string $token, string $ruleId): \Illuminate\Http\Client\Response
     {
         return Checkpoint::post('/', [
             'RuleId' => $ruleId,
@@ -101,7 +141,7 @@ class WebhookController
             ->map(function ($item) {
                 return [
                     'timestamp' => $item['ReqTime'] ?? null,
-                    'request_id' => $item['Seq'] ?? null,
+                    'id' => $item['Seq'] ?? null,
                     'name' => $item['Name'] ?? null,
                     'id_number' => $item['Idcard'] ?? null,
                     'similarity' => $item['Sim'] ?? null,
