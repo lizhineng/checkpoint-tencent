@@ -5,14 +5,12 @@ namespace Zhineng\Checkpoint\Tencent;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use InvalidArgumentException;
+use Zhineng\Checkpoint\Tencent\Concerns\CheckResult;
+use Zhineng\Checkpoint\Tencent\Concerns\CreateVerification;
 
 class Checkpoint
 {
-    public static bool $runsMigrations = true;
-
-    public static bool $registersRoutes = true;
-
-    public static string $identityVerificationModel = IdentityVerification::class;
+    use CreateVerification, CheckResult;
 
     public static function endpointUrl(): string
     {
@@ -31,14 +29,11 @@ class Checkpoint
         }
 
         return Http::asJson()
-            ->withMiddleware(SignRequest::handle(config('checkpoint.key'), config('checkpoint.secret'), $options['action']))
+            ->withMiddleware(SignRequest::handle(
+                config('services.checkpoint.key'),
+                config('services.checkpoint.secret'),
+                $options['action']
+            ))
             ->{$method}($uri, $payload);
-    }
-
-    public static function ignoreRoutes(): static
-    {
-        static::$registersRoutes = false;
-
-        return new static;
     }
 }

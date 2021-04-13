@@ -1,42 +1,23 @@
 <?php
 
-namespace Zhineng\Checkpoint\Tencent\Channels;
+namespace Zhineng\Checkpoint\Tencent\Verify;
 
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Client\Response;
 use Zhineng\Checkpoint\Tencent\Checkpoint;
+use Zhineng\Checkpoint\Tencent\Contracts\Verifiable;
 
-class IdentityVerificationViaEid
+class VerifyViaEid implements Verifiable
 {
-    protected ?string $name = null;
-
-    protected ?string $idNumber = null;
-
-    protected array $metadata = [];
+    use ManagesIdentity, ManagesMetadata;
 
     protected array $config = [
         'InputType' => EidConfig::INPUT_TYPE_OCR,
     ];
 
     public function __construct(
-        protected Model $identifiable,
         protected string $merchantId
     ) {
         //
-    }
-
-    public function checkFor(string $name, string $idNumber): self
-    {
-        $this->name = $name;
-        $this->idNumber = $idNumber;
-
-        return $this;
-    }
-
-    public function withMetadata(array $metadata): self
-    {
-        $this->metadata = array_merge($this->metadata, $metadata);
-
-        return $this;
     }
 
     public function ocr(): self
@@ -53,25 +34,27 @@ class IdentityVerificationViaEid
         return $this;
     }
 
-    public function acceptsIdentityFromUser(): self
+    public function usingIdentityFromUser(): self
     {
-        $this->config['InputType'] = EidConfig::INPUT_TYPE_ACCEPTS_IDENTITY_FROM_USER;
+        $this->config['InputType'] = EidConfig::INPUT_TYPE_USING_IDENTITY_FROM_USER;
 
         return $this;
     }
 
-    public function usingIdentityFromCreation(): self
+    public function usingIdentityFromCreation(string $name, string $idNumber): self
     {
         $this->config['InputType'] = EidConfig::INPUT_TYPE_USING_IDENTITY_FROM_CREATION;
 
+        $this->checkFor($name, $idNumber);
+
         return $this;
     }
 
-    public function request()
+    public function request(): Response
     {
         $payload = [
             'MerchantId' => $this->merchantId,
-            'Config' => json_encode($this->config),
+            'Config' => $this->config,
         ];
 
         if ($this->name && $this->idNumber) {
@@ -83,6 +66,6 @@ class IdentityVerificationViaEid
             $payload['Extra'] = json_encode($this->metadata);
         }
 
-        return Checkpoint::post('/', $payload, ['action' => 'GetEidToken'])['Response']['EidToken'];
+        return Checkpoint::post('/', $payload, ['action' => 'GetEidToken']);
     }
 }

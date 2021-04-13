@@ -27,13 +27,6 @@
             "Zhineng\\Checkpoint\\Tencent\\Tests\\": "tests"
         }
     },
-    "extra": {
-        "laravel": {
-            "providers": [
-                "Zhineng\\Checkpoint\\Tencent\\CheckpointServiceProvider"
-            ]
-        }
-    },
     "config": {
         "sort-packages": true
     },
