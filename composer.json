@@ -1,6 +1,6 @@
 {
     "name": "lizhineng/checkpoint-tencent",
-    "description": "Checkpoint provides an expressive, fluent interface to Tencent identity verification services.",
+    "description": "Checkpoint provides an expressive, fluent interface to Tencent Face ID services.",
     "type": "library",
     "license": "MIT",
     "authors": [
